@@ -2,35 +2,79 @@
 
 namespace App\Filament\User\Resources\EventRegisterResource\Widgets;
 
-use Filament\Widgets\Widget;
+use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
+use Saade\FilamentFullCalendar\Data\EventData;
 use App\Models\EventRegister;
-use Illuminate\Database\Eloquent\Model;
 
-class CalendarWidget extends Widget
+class CalendarWidget extends FullCalendarWidget
 {
-    protected static string $view = 'filament.widgets.calendar-widget';
-
-    public Model|string|null $model = EventRegister::class;
-
-    public function getViewData(): array
+    
+    protected function getViewData(): array
     {
         return [
-            'events' => $this->fetchEvents(),
+            'config' => [
+                'headerToolbar' => [
+                    'left' => 'prev,next today',
+                    'center' => 'title',
+                    'right' => 'dayGridMonth,timeGridWeek,timeGridDay'
+                ],
+                'initialView' => 'dayGridMonth',
+                'dayMaxEvents' => true,
+                'selectable' => true,
+                'eventTimeFormat' => [
+                    'hour' => '2-digit',
+                    'minute' => '2-digit',
+                    'meridiem' => true,
+                ],
+            ]
         ];
     }
 
-    protected function fetchEvents(): array
+    
+    public function fetchEvents(array $fetchInfo): array
     {
-        return EventRegister::all()->map(function ($event) {
-            return [
-                'id'    => $event->id,
-                'title' => $event->name,
-                'type'  => $event->type,
-                'start' => $event->start,
-                'end'   => $event->end,
-                
-            ];
-        })->toArray();
+        return EventRegister::query()
+            ->where('user_id', auth()->id())
+            ->where('start', '>=', $fetchInfo['start'])
+            ->where('end', '<=', $fetchInfo['end'])
+            ->get()
+            ->map(function (EventRegister $event) {
+            
+                $color = match ($event->type) {
+                    'meeting' => '#4CAF50',   
+                    'training' => '#2196F3',  
+                    'conference' => '#9C27B0', 
+                    default => '#FF9800'       
+                };
+
+                return EventData::make()
+                    ->id($event->id)
+                    ->title($event->name)
+                    ->start($event->start)
+                    ->end($event->end)
+                    ->url(route('filament.user.resources.event-registers.edit', ['record' => $event->id]))
+                    ->backgroundColor($color)
+                    ->textColor('#ffffff')
+                    ->extraAttributes([
+                        'location' => $event->location,
+                        'description' => $event->description,
+                        'type' => $event->type,
+                        'online_only' => $event->online_only,
+                        'virtual_link' => $event->virtual_link,
+                    ]);
+            })
+            ->toArray();
+    }
+
+   
+    protected function getOptions(): array
+    {
+        return [
+            'plugins' => ['dayGrid', 'timeGrid', 'interaction'],
+            'defaultAllDay' => false,
+            'editable' => false,
+            'selectable' => true,
+            'displayEventTime' => true,
+        ];
     }
 }
-

@@ -8,7 +8,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\EventRegister;
 use Filament\Resources\Resource;
-use App\Filament\User\Resources\EventRegisterResource\Widgets\CalendarWidget;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Textarea;
@@ -20,8 +20,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\BooleanColumn;
 use Filament\Forms\Components\DateTimePicker;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
 use App\Filament\User\Resources\EventRegisterResource\Pages;
 use App\Filament\User\Resources\EventRegisterResource\RelationManagers;
+use App\Filament\User\Resources\EventRegisterResource\Widgets\CalendarWidget;
 
 class EventRegisterResource extends Resource
 {
@@ -37,9 +39,12 @@ class EventRegisterResource extends Resource
     {
         return $form
             ->schema([
+                // Hidden::make('user_id')
+                // ->default(auth()->id()),
                 TextInput::make('name')->required()->label('Event Name'),
                 TextInput::make('type')->required(),
 
+                
                 DateTimePicker::make('start')
                     ->required()
                     ->seconds(false)
@@ -124,7 +129,8 @@ class EventRegisterResource extends Resource
     public static function getWidgets(): array
     {
         return [
-            CalendarWidget::class,
+            FullCalendarWidget::class, 
+            
         ];
     }
 }
